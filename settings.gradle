@@ -1,2 +1,6 @@
 rootProject.name = 'ngs'
 
+include 'server'
+
+include 'client'
+

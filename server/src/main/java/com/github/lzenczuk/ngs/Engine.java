@@ -24,11 +24,12 @@ public class Engine {
                 try {
                     String command = inQ.take();
 
-                    String response = "Receive command: "+command;
-
-                    System.out.println(response);
-                    if(outQ1Active) outQ1.add(response);
-                    if(outQ2Active) outQ2.add(response);
+                    try {
+                        if (outQ1Active) outQ1.add(command);
+                        if (outQ2Active) outQ2.add(command);
+                    }catch(IllegalStateException e){
+                        // skipping - it is not a solution
+                    }
 
                 } catch (InterruptedException e) {
                     e.printStackTrace();
@@ -38,7 +39,11 @@ public class Engine {
     }
 
     public void executeCommand(String command){
-        inQ.add(command);
+        try {
+            inQ.add(command);
+        }catch (IllegalStateException e){
+            // skipping message
+        }
     }
 
     public BlockingQueue<String> getOutputQ(){

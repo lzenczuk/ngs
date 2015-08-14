@@ -19,27 +19,25 @@ public class ServerHandler extends SimpleChannelInboundHandler<TextWebSocketFram
 
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, TextWebSocketFrame msg) throws Exception {
-        System.out.println("Receive message: " + msg);
-
         engine.executeCommand(msg.text());
     }
 
     @Override
     public void channelRegistered(ChannelHandlerContext ctx) throws Exception {
-        System.out.println("channelRegistered");
         super.channelRegistered(ctx);
     }
 
     @Override
     public void channelActive(ChannelHandlerContext ctx) throws Exception {
-        System.out.println("channelActive");
+
+        final ChannelHandlerContext c = ctx;
 
         new Thread(() -> {
             BlockingQueue<String> outputQ = engine.getOutputQ();
             while (true){
                 try {
                     String message = outputQ.take();
-                    ctx.writeAndFlush(message);
+                    c.writeAndFlush(new TextWebSocketFrame(message));
 
                 } catch (InterruptedException e) {
                     e.printStackTrace();
@@ -52,19 +50,16 @@ public class ServerHandler extends SimpleChannelInboundHandler<TextWebSocketFram
 
     @Override
     public void channelUnregistered(ChannelHandlerContext ctx) throws Exception {
-        System.out.println("channelUnregistered");
         super.channelUnregistered(ctx);
     }
 
     @Override
     public void channelInactive(ChannelHandlerContext ctx) throws Exception {
-        System.out.println("channelInactive");
         super.channelInactive(ctx);
     }
 
     @Override
     public void channelReadComplete(ChannelHandlerContext ctx) throws Exception {
-        System.out.println("channelReadComplete");
         super.channelReadComplete(ctx);
     }
 }

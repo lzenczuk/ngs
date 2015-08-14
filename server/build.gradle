@@ -1,10 +1,23 @@
+buildscript {
+
+    // gradle-docker is not in default repositories
+    repositories {
+        jcenter()
+    }
+
+    dependencies {
+        classpath('se.transmode.gradle:gradle-docker:1.2')
+    }
+}
+
 apply plugin: 'java'
 apply plugin: 'application'
+apply plugin: 'docker'
 
 sourceCompatibility = 1.8
 version = '1.0'
 
-mainClassName = "com.github.lzenczuk.ngs.Main"
+mainClassName = 'com.github.lzenczuk.ngs.Main'
 
 repositories {
     mavenCentral()
@@ -15,4 +28,39 @@ dependencies {
 
     testCompile 'junit:junit:4.11'
     testCompile 'org.hamcrest:hamcrest-all:1.3'
+}
+
+jar {
+    baseName = 'ngs-server'
+    version = '0.1.0'
+
+    // required to have executable jar
+    manifest {
+        attributes 'Main-Class': mainClassName
+    }
+
+    // this load dependencies to jar
+    from {
+        configurations.compile.collect { it.isDirectory() ? it : zipTree(it) }
+    }
+}
+
+// docker image name will be com.github.lzenczuk/ngs-server
+group = 'com.github.lzenczuk'
+
+docker {
+    // This is workaround for sudo required by docker
+    dockerBinary = 'sudo docker'
+}
+
+task buildDocker(type: Docker, dependsOn: build) {
+    push = false
+    applicationName = jar.baseName
+    dockerfile = file('src/main/docker/Dockerfile')
+    doFirst {
+        copy {
+            from jar
+            into stageDir
+        }
+    }
 }

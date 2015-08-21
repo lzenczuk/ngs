@@ -1,25 +1,25 @@
-package com.github.lzenczuk.ngs;
+package com.github.lzenczuk.ngs.server;
 
+import com.github.lzenczuk.ngs.channel.inoutchannel.impl.InputOutputChannel;
+import com.github.lzenczuk.ngs.channel.inoutchannel.impl.InputOutputChannelImpl;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.handler.codec.http.websocketx.TextWebSocketFrame;
-
-import java.util.concurrent.BlockingQueue;
 
 /**
  * @author lzenczuk 13/08/2015
  */
 public class ServerHandler extends SimpleChannelInboundHandler<TextWebSocketFrame> {
 
-    private final Engine engine;
+    private final InputOutputChannel<String, String> processor;
 
-    public ServerHandler(EngineManager engineManager) {
-        engine = engineManager.getEngine();
+    public ServerHandler(InputOutputChannel<String, String> processor) {
+        this.processor = processor;
     }
 
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, TextWebSocketFrame msg) throws Exception {
-        engine.executeCommand(msg.text());
+        processor.sendInput(msg.text());
     }
 
     @Override
@@ -30,20 +30,7 @@ public class ServerHandler extends SimpleChannelInboundHandler<TextWebSocketFram
     @Override
     public void channelActive(ChannelHandlerContext ctx) throws Exception {
 
-        final ChannelHandlerContext c = ctx;
-
-        new Thread(() -> {
-            BlockingQueue<String> outputQ = engine.getOutputQ();
-            while (true){
-                try {
-                    String message = outputQ.take();
-                    c.writeAndFlush(new TextWebSocketFrame(message));
-
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-            }
-        }).start();
+        processor.setOutputConsumer((message) -> ctx.writeAndFlush(new TextWebSocketFrame(message)));
 
         super.channelActive(ctx);
     }

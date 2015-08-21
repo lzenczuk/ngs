@@ -1,9 +1,9 @@
-package com.github.lzenczuk.ngs.message.channel;
+package com.github.lzenczuk.ngs.channel;
 
 import java.util.concurrent.*;
 import java.util.function.Consumer;
 
-public class SingleQueueMessageChannel<I> implements SingleConsumerMessageChannel<I> {
+public class SingleConsumerSingleQueueChannelImpl<I> implements SingleConsumerChannel<I> {
     private  BlockingQueue<I> queue = new ArrayBlockingQueue<I>(1024);
 
     private Consumer<I> consumer;

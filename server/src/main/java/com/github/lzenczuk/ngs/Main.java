@@ -1,15 +1,13 @@
 package com.github.lzenczuk.ngs;
 
-import io.netty.bootstrap.ServerBootstrap;
-import io.netty.channel.*;
-import io.netty.channel.nio.NioEventLoopGroup;
-import io.netty.channel.socket.SocketChannel;
-import io.netty.channel.socket.nio.NioServerSocketChannel;
-import io.netty.handler.codec.http.HttpObjectAggregator;
-import io.netty.handler.codec.http.HttpServerCodec;
-import io.netty.handler.codec.http.websocketx.WebSocketServerProtocolHandler;
-import io.netty.handler.logging.LogLevel;
-import io.netty.handler.logging.LoggingHandler;
+import com.github.lzenczuk.ngs.channel.SingleConsumerChannel;
+import com.github.lzenczuk.ngs.channel.SingleConsumerSingleQueueChannelImpl;
+import com.github.lzenczuk.ngs.channel.inoutchannel.impl.InputOutputChannelImpl;
+import com.github.lzenczuk.ngs.engine.task.TaskEngine;
+import com.github.lzenczuk.ngs.message.dispatcher.DispatcherImpl;
+import com.github.lzenczuk.ngs.message.task.InTaskMessage;
+import com.github.lzenczuk.ngs.message.task.OutTaskMessage;
+import com.github.lzenczuk.ngs.server.Server;
 
 /**
  * @author lzenczuk 13/08/2015
@@ -18,33 +16,19 @@ public class Main {
 
     public static void main(String[] args) throws InterruptedException {
 
-        EngineManager engineManager = new EngineManager();
+        SingleConsumerChannel<InTaskMessage> inChannel = new SingleConsumerSingleQueueChannelImpl<>();
+        SingleConsumerChannel<OutTaskMessage> outChannel = new SingleConsumerSingleQueueChannelImpl<>();
+        InputOutputChannelImpl<InTaskMessage, OutTaskMessage> processor = new InputOutputChannelImpl<>(inChannel, outChannel);
 
-        EventLoopGroup bossGroup = new NioEventLoopGroup();
-        EventLoopGroup workerGroup = new NioEventLoopGroup();
-        try {
-            ServerBootstrap b = new ServerBootstrap();
-            b.group(bossGroup, workerGroup)
-                    .channel(NioServerSocketChannel.class)
-                    .handler(new LoggingHandler(LogLevel.INFO))
-                    .childHandler(new ChannelInitializer<SocketChannel>() {
+        TaskEngine engine = new TaskEngine();
 
-                        @Override
-                        protected void initChannel(SocketChannel ch) throws Exception {
-                            ChannelPipeline pipeline = ch.pipeline();
-                            pipeline.addLast(new HttpServerCodec());
-                            pipeline.addLast(new HttpObjectAggregator(2));
-                            pipeline.addLast(new WebSocketServerProtocolHandler("/ws"));
-                            pipeline.addLast(new ServerHandler(engineManager));
-                        }
-                    });
+        DispatcherImpl<InTaskMessage, OutTaskMessage> dispatcher = new DispatcherImpl<>();
+        dispatcher.registerEngine(1, engine);
 
-            Channel ch = b.bind(8088).sync().channel();
+        processor.setInputConsumer((inTaskMessage -> {
+            dispatcher.process(inTaskMessage).map(outTaskMessage -> processor.sendOutput(outTaskMessage));
+        }));
 
-            ch.closeFuture().sync();
-        } finally {
-            bossGroup.shutdownGracefully();
-            workerGroup.shutdownGracefully();
-        }
+        new Server(processor).start();
     }
 }

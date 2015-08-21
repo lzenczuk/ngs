@@ -1,4 +1,4 @@
-package com.github.lzenczuk.ngs.message.channel;
+package com.github.lzenczuk.ngs.channel;
 
 import org.junit.Test;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -13,7 +13,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * @author lzenczuk 19/08/2015
  */
-public class SingleQueueMessageChannelTest {
+public class SingleConsumerSingleQueueChannelImplTest {
 
     @Test
     public void subscriberShouldReceiveAllMessagesInCorrectOrder() throws InterruptedException {
@@ -21,7 +21,7 @@ public class SingleQueueMessageChannelTest {
         CountDownLatch countDownLatch = new CountDownLatch(6);
         List<String> messages = Collections.synchronizedList(new LinkedList<>());
 
-        SingleQueueMessageChannel<String> channel = new SingleQueueMessageChannel<>();
+        SingleConsumerSingleQueueChannelImpl<String> channel = new SingleConsumerSingleQueueChannelImpl<>();
 
         boolean addingConsumerResult = channel.setConsumer((String msg) -> {
             System.out.println("Consumer 1. Receive message: " + msg);

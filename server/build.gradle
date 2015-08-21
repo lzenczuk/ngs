@@ -24,6 +24,8 @@ repositories {
 }
 
 dependencies {
+    compile project(':shared')
+
     compile 'io.netty:netty-all:4.0.30.Final'
 
     testCompile 'junit:junit:4.11'

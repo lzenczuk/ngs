@@ -25,10 +25,8 @@ public class Main {
         DispatcherImpl<InTaskMessage, OutTaskMessage> dispatcher = new DispatcherImpl<>();
         dispatcher.registerEngine(1, engine);
 
-        processor.setInputConsumer((inTaskMessage -> {
-            dispatcher.process(inTaskMessage).map(outTaskMessage -> processor.sendOutput(outTaskMessage));
-        }));
+        processor.setInputConsumer((inTaskMessage -> dispatcher.process(inTaskMessage).map(processor::sendOutput)));
 
-        new Server(processor).start();
+        new Server(processor, InTaskMessage.class, OutTaskMessage.class).start();
     }
 }

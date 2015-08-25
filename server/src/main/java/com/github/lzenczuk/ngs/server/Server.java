@@ -18,12 +18,17 @@ import io.netty.handler.logging.LoggingHandler;
 /**
  * @author lzenczuk 13/08/2015
  */
-public class Server {
+public class Server<InM, OutM> {
 
-    private final InputOutputChannel channel;
+    private final InputOutputChannel<InM, OutM> channel;
 
-    public Server(InputOutputChannel channel) {
+    private final Class<InM> inMessageClass;
+    private final Class<OutM> outMessageClass;
+
+    public Server(InputOutputChannel<InM, OutM> channel, Class<InM> inMessageClass, Class<OutM> outMessageClass) {
         this.channel = channel;
+        this.inMessageClass = inMessageClass;
+        this.outMessageClass = outMessageClass;
     }
 
     public void start()  throws InterruptedException{
@@ -42,7 +47,7 @@ public class Server {
                             pipeline.addLast(new HttpServerCodec());
                             pipeline.addLast(new HttpObjectAggregator(2));
                             pipeline.addLast(new WebSocketServerProtocolHandler("/ws"));
-                            pipeline.addLast(new ServerHandler(channel));
+                            pipeline.addLast(new ServerHandler(channel, inMessageClass, outMessageClass));
                         }
                     });
 

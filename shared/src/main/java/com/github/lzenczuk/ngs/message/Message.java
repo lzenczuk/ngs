@@ -7,6 +7,10 @@ public abstract class Message {
 
     private final long engineId;
 
+    public Message() {
+        this.engineId=-1;
+    }
+
     public Message(long engineId) {
         this.engineId = engineId;
     }

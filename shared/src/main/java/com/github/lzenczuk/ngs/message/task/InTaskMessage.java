@@ -7,6 +7,8 @@ import com.github.lzenczuk.ngs.message.Message;
  */
 public abstract class InTaskMessage extends Message {
 
+    public InTaskMessage() {}
+
     public InTaskMessage(long engineId) {
         super(engineId);
     }

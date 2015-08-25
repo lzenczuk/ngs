@@ -1,9 +1,15 @@
 package com.github.lzenczuk.ngs.client;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.github.lzenczuk.ngs.message.ChannelMessage;
+import com.github.lzenczuk.ngs.message.task.AddTask;
+import com.github.lzenczuk.ngs.message.task.TaskAdded;
 import org.java_websocket.client.WebSocketClient;
 import org.java_websocket.drafts.Draft_10;
 import org.java_websocket.handshake.ServerHandshake;
 
+import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -14,13 +20,15 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 public class Main {
 
-    public static final int NUMBER_OF_MESSAGES = 10000;
+    public static final int NUMBER_OF_MESSAGES = 100000;
 
-    public static void main(String[] args) throws URISyntaxException, InterruptedException {
+    public static void main(String[] args) throws URISyntaxException, InterruptedException, JsonProcessingException {
 
         Object endLock = new Object();
         AtomicInteger messages = new AtomicInteger(0);
         AtomicLong delay = new AtomicLong(0);
+
+        ObjectMapper objectMapper = new ObjectMapper();
 
         WebSocketClient client = new WebSocketClient(new URI("ws://localhost:8088/ws"), new Draft_10()) {
             @Override
@@ -33,11 +41,27 @@ public class Main {
 
             @Override
             public void onMessage(String message) {
-                long currentNanoTime = System.nanoTime();
-                long nanoTime = Long.parseLong(message);
+                try {
+                    long currentNanoTime = System.nanoTime();
+                    ChannelMessage channelMessage = objectMapper.readValue(message, ChannelMessage.class);
 
-                long delta = currentNanoTime - nanoTime;
-                delay.addAndGet(delta);
+                    Object value = objectMapper.readValue(channelMessage.getMessage(), Class.forName(channelMessage.getMessageClass()));
+
+                    if(value instanceof TaskAdded){
+                        TaskAdded ta = (TaskAdded) value;
+
+                        String[] strings = ta.getTaskTitle().split(" ");
+                        long nanoTime = Long.parseLong(strings[1]);
+                        long delta = currentNanoTime - nanoTime;
+                        delay.addAndGet(delta);
+                    }
+
+
+                } catch (IOException e) {
+                    e.printStackTrace();
+                } catch (ClassNotFoundException e) {
+                    e.printStackTrace();
+                }
 
                 int receivedMessages = messages.incrementAndGet();
                 if(receivedMessages ==NUMBER_OF_MESSAGES){
@@ -69,8 +93,15 @@ public class Main {
         for(int x=0;x< NUMBER_OF_MESSAGES;x++){
             long nanoTime = System.nanoTime();
 
-            client.send(Long.toString(nanoTime));
-            //client.send(x+":"+Long.toString(nanoTime));
+            AddTask addTask = new AddTask(1, "Task " + nanoTime);
+
+            String messageClass = addTask.getClass().getCanonicalName();
+            String message = objectMapper.writeValueAsString(addTask);
+
+            ChannelMessage channelMessage = new ChannelMessage(message, messageClass);
+            String channelMessageString = objectMapper.writeValueAsString(channelMessage);
+
+            client.send(channelMessageString);
         }
 
         synchronized (endLock){

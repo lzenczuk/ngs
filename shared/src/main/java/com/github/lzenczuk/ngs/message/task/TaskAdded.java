@@ -5,8 +5,10 @@ package com.github.lzenczuk.ngs.message.task;
  */
 public class TaskAdded extends OutTaskMessage {
 
-    private final long taskId;
-    private final String taskTitle;
+    private long taskId;
+    private String taskTitle;
+
+    public TaskAdded() {}
 
     public TaskAdded(long engineId, long taskId, String taskTitle) {
         super(engineId);
@@ -20,5 +22,13 @@ public class TaskAdded extends OutTaskMessage {
 
     public String getTaskTitle() {
         return taskTitle;
+    }
+
+    @Override
+    public String toString() {
+        return "TaskAdded{" +
+                "taskId=" + taskId +
+                ", taskTitle='" + taskTitle + '\'' +
+                '}';
     }
 }

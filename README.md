@@ -4,7 +4,7 @@
 ##Run client:##
 ./gradlew clean client:run
 
-##Build docker image## 
+##Build docker image##
 ./gradlew clean server:buildDocker
 
 ##Run docker image##

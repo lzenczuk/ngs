@@ -5,7 +5,9 @@ package com.github.lzenczuk.ngs.message.task;
  */
 public class AddTask extends InTaskMessage {
 
-    private final String taskTitle;
+    private String taskTitle;
+
+    public AddTask() {}
 
     public AddTask(long engineId, String taskTitle) {
         super(engineId);
@@ -14,5 +16,12 @@ public class AddTask extends InTaskMessage {
 
     public String getTaskTitle() {
         return taskTitle;
+    }
+
+    @Override
+    public String toString() {
+        return "AddTask{" +
+                "taskTitle='" + taskTitle + '\'' +
+                '}';
     }
 }

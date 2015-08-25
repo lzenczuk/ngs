@@ -27,6 +27,7 @@ dependencies {
     compile project(':shared')
 
     compile 'io.netty:netty-all:4.0.30.Final'
+    compile 'com.fasterxml.jackson.core:jackson-databind:2.6.1'
 
     testCompile 'junit:junit:4.11'
     testCompile 'org.hamcrest:hamcrest-all:1.3'

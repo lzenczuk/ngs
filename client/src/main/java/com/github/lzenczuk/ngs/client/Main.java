@@ -22,6 +22,9 @@ public class Main {
 
     public static final int NUMBER_OF_MESSAGES = 100000;
 
+    public static final int messagesPerSecond = 10;
+    public static final int timeInSeconds = 60;
+
     public static void main(String[] args) throws URISyntaxException, InterruptedException, JsonProcessingException {
 
         Object endLock = new Object();
@@ -90,7 +93,12 @@ public class Main {
             endLock.wait();
         }
 
-        for(int x=0;x< NUMBER_OF_MESSAGES;x++){
+        long numberOfMessages = messagesPerSecond*timeInSeconds;
+        long messageProcessingTime = 1000000000/messagesPerSecond;
+
+        System.out.println("message processing time: "+messageProcessingTime);
+
+        for(int x=0;x< numberOfMessages;x++){
             long nanoTime = System.nanoTime();
 
             AddTask addTask = new AddTask(1, "Task " + nanoTime);
@@ -102,6 +110,21 @@ public class Main {
             String channelMessageString = objectMapper.writeValueAsString(channelMessage);
 
             client.send(channelMessageString);
+
+            long currentNanoTime = System.nanoTime();
+
+            long sendNanoTime = currentNanoTime-nanoTime;
+
+            long waitingNanos = messageProcessingTime-sendNanoTime;
+
+            long waitingMillis = 0;
+            if(waitingNanos>999999){
+                waitingMillis = waitingNanos/1000000;
+                waitingNanos = waitingNanos-waitingMillis*1000000;
+            }
+            System.out.println("messageProcessingTime: "+messageProcessingTime+" processing nanos: "+sendNanoTime+" waiting: "+waitingMillis+":"+waitingNanos);
+
+            Thread.sleep(waitingMillis, (int)waitingNanos);
         }
 
         synchronized (endLock){
@@ -114,7 +137,7 @@ public class Main {
 
         double ad=d*1.0/m;
 
-        System.out.println("Processed messages: "+m+" from "+NUMBER_OF_MESSAGES+". Average delay:"+ad);
+        System.out.println("Processed messages: "+m+" from "+numberOfMessages+". Average delay:"+ad);
 
         System.exit(0);
     }
